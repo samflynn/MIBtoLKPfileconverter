@@ -1,0 +1,173 @@
+FORM: LookupFile
+Version: 1
+LookupFileCount:21
+
+Case: "101"
+{
+set(iSeverity=5)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart1",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s, SNMP Agent is up.",sIPadd, sNodeName)
+}
+
+Case: "102"
+{
+set(iSeverity=2)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart2",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s, SNMP Agent is down.",sIPadd, sNodeName)
+}
+
+Case: "107"
+{
+set(iSeverity=2)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart3",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s, Cyclone:duplicate hostadapter ID.",sIPadd, sNodeName)
+}
+
+Case: "108"
+{
+set(iSeverity=2)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart4",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s, The HostAdapter# %s with HostAdapter Id %s and Manager Id %s is discovered.",sIPadd, sNodeName,sTrapValue[0],sTrapValue[1],sTrapValue[2])
+}
+
+Case: "109"
+{
+set(iSeverity=2)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart5",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s, The HostAdapter# %s has new HostAdapter Id %s and Manager Id %s.",sIPadd, sNodeName,sTrapValue[0],sTrapValue[1],sTrapValue[2])
+}
+
+Case: "110"
+{
+set(iSeverity=2)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart6",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s, The HostAdapter# %s has Failed.",sIPadd, sNodeName,sTrapValue[0])
+}
+
+Case: "111"
+{
+set(iSeverity=2)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart7",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s, Host Adapter# %s recovered.",sIPadd, sNodeName,sTrapValue[0])
+}
+
+Case: "112"
+{
+set(iSeverity=2)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart8",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s, The HostAdapter# %s, TargetID %s, Lun# %s has failed.",sIPadd, sNodeName,sTrapValue[0],sTrapValue[1],sTrapValue[2])
+}
+
+Case: "113"
+{
+set(iSeverity=2)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart9",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s,  The HostAdapter# %s, TargetID %s, Lun# %s of vendor %s  product %s has discovered.",sIPadd, sNodeName,sTrapValue[0],sTrapValue[1],sTrapValue[2],sTrapValue[3],sTrapValue[4])
+}
+
+Case: "114"
+{
+set(iSeverity=2)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart10",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s, The HostAdapter# %s, TargetID %s,Lun# %s has recovered.",sIPadd, sNodeName,sTrapValue[0],sTrapValue[1],sTrapValue[2])
+}
+
+Case: "115"
+{
+set(iSeverity=5)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart11",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s, The HostAdapter# %s, TargetID %s, Lun# %s has new Vendor %s and Product %s information.",sIPadd, sNodeName,sTrapValue[0],sTrapValue[1],sTrapValue[2],sTrapValue[3],sTrapValue[4])
+}
+
+Case: "116"
+{
+set(iSeverity=2)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart12",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s,  The HostAdapter# %s, TargetID %s, Lun# %s has Predictive Failure Condition on vendor %s product %s with sense info MSB(sense code), next  8 bits (sense code Qual) next 8 bits (Add sense code Qual) LSB (0000) %s.",sIPadd, sNodeName,sTrapValue[0],sTrapValue[1],sTrapValue[2],sTrapValue[3],sTrapValue[4],sTrapValue[5])
+} 
+
+Case: "117"
+{
+set(iSeverity=2)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart13",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s, The Aspi database is cleared and therefore all the previous information are not available. ",sIPadd, sNodeName)
+}
+
+Case: "118"
+{
+set(iSeverity=2)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart14",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s, "The Aspi has crashed.",sIPadd, sNodeName)
+}
+
+Case: "119"
+{
+set(iSeverity=5)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart15",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s, No memory left for Aspi Operations.",sIPadd, sNodeName)
+}
+
+Case: "120"
+{
+set(iSeverity=5)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart16",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s,  Unable to open Aspi file for writing, problem exists in server hard disk.",sIPadd, sNodeName)
+}
+
+Case: "121"
+{
+set(iSeverity=2)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart17",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s, Unable to open Aspi file, problem exists in server hard disk.",sIPadd, sNodeName)
+}
+
+Case: "122"
+{
+set(iSeverity=2)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart18",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s, Aspi device file doesnot exist.",sIPadd, sNodeName)
+}
+
+Case: "123"
+{
+set(iSeverity=5)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart19",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s, Aspi:Memory allocation is failing.",sIPadd, sNodeName)
+}
+
+Case: "124"
+{
+set(iSeverity=2)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart20",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s, Aspi:unable to read the file server hard disk might have problems.",sIPadd, sNodeName)
+}
+
+Case: "125"
+{
+set(iSeverity=2)
+lookup(sTrapResource, "MPS_Node2Res", iMatchMPS)
+printf(sResource,"%s:sCSISmart21",sTrapResource)
+printf(sMessage,"IP:%s,NodeName:%s, Aspi:database is corrupted.",sIPadd, sNodeName)
+}
+
+
