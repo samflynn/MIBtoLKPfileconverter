@@ -1,10 +1,10 @@
 # MIBtoLKPfileconverter
 
-Abbreviations Used 
-SNMP : Simple Network Management Protocol
-MIB : Management Information base
-LKP : Look up file
-FMS : Fault Management System
+Abbreviations Used               
+SNMP : Simple Network Management Protocol             
+MIB : Management Information base             
+LKP : Look up file               
+FMS : Fault Management System             
 
 A Shell script to convert SNMP MIB alarm files of a telecom network to LKP configuration files that can be loaded on to a Fault management system. 
 
