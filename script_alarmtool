@@ -1,0 +1,532 @@
+#!/bin/bash
+# ALARM AUTOMATION TOOL- Shrey Mudgal
+# WARNING : If the input .mib files are from windows, Please remove '\r' from them, to avoid any weird behaviour in the script"
+# mibwithtraps file refers to the csv file.
+# Note: Place script in the same directory in which the MIB files and the CSV file. 
+
+IFS="," # to set delimitor, this decides how the code will break the csv file
+
+t=$(awk -F ',' '{print $1}' mibwithtraps | sort | uniq -c | wc -l) #this count the total number of different MIB files in mibwithtraps file
+echo " Total number of MIBs: $t" 
+# this for loop loads the MIB files one by one
+
+##################################################################################################################
+###################################################### LOOP 1 ####################################################
+##################################################################################################################
+
+for (( v=0; v<t; v++ )) 
+do
+while read f1 f2 f3 f4
+do 
+fname=$f1 #catch the file name and store it in fname
+break
+done < mibwithtraps
+
+#remove all extra spaces from the fname variable
+fname=$(echo "$fname" | sed 's/^[ \t]*//' | sed 's/[ \t]*$//')
+
+echo "------------------------------------------------------------------------------------------------------"
+echo "$fname"
+echo "------------------------------------------------------------------------------------------------------"
+
+#Find the total number of traps pertaining to a MIB
+i=$(grep "$fname" mibwithtraps | wc -l)
+echo "Total number of traps in this file are :$i"
+# Extract the corresponding traps of a MIB and store it into a temporary file temp
+#echo "Copying the information corresponding to this file from the csv file and storing it into temp"
+grep "$fname" mibwithtraps > temp
+
+# Add a condition to check if the MIB file name picked up from the mibwithtraps file is present in the directory 
+find $fname
+if [ "$?" -ne 0 ] 
+then
+# The file is not present in the directory, reduce the the number of the t variable by one 
+echo "MIB not found"
+waaaaaa=1
+#t=$t-1
+else 
+# file is found in the directory
+#more tron
+grep TRAP-TYPE -q $fname # Check how a MIB file defines a trap 
+if [ "$?" -eq 0 ] 
+then 
+awk '/TRAP-TYPE/{i++}i' $fname >tron
+echo "TRAP-TYPE file"
+# this file defines traps by TRAP-TYPE
+cnt=TRAP-TYPE
+eoro=ENTERPRISE
+vovar=VARIABLES
+else 
+awk '/NOTIFICATION-TYPE/{i++}i' $fname >tron
+echo "NOTIFICATION-TYPE file" 
+# This file defines traps by NOTIFICATION-TYPE
+cnt=NOTIFICATION-TYPE
+eoro=OBJECTS
+vovar=OBJECTS
+
+fi
+echo "MIB file found"
+################################################ Storing the trap names of a MIB ###########################################
+
+#echo "storing the name of the traps in array tna[x] from the temp file"
+
+x=0
+while [[ $x -lt $i ]]
+do 
+
+while read f1 f2 f3 f4
+do 
+
+
+tna[$x]=$f2
+x=$x+1
+
+done
+
+done < temp
+echo "Stored. The first trap name should be ${tna[0]}"
+
+
+##################################### Storing the severity of the traps of a MIB ########################################################
+#echo "Storing the severity of the trap in array sev[x] from trap file"
+w=0
+
+while [[ $w -lt $i ]]
+do 
+
+while read f1 f2 f3 f4
+do 
+
+
+sev[$w]=$f4
+
+w=$w+1
+
+done
+
+done < temp
+echo "Stored. The first traps severity should be ${sev[0]}"
+
+
+# Changing severity words to numbers 
+
+echo "converting this words to severity numbers 5-critical 4-major 3-minor 2-informational 1-clear"
+for (( w=0; w<i; w++ ))
+do
+
+case ${sev[$w]} in
+     CRITICAL)
+          #echo "CRITICAL "
+	sev[$w]=5         
+	;;
+        MAJOR)
+          #echo "MAJOR"
+	sev[$w]=4
+          ;;
+        MINOR)
+          #echo "MINOR"
+	sev[$w]=3
+	;; 
+INFORMATIONAL)
+          #echo "INFORMATIONAL"
+	sev[$w]=2         
+	 ;;
+        CLEAR)
+          #echo "CLEAR"
+	sev[$w]=1        
+	  ;;
+           OK)
+          #echo "OK"
+	sev[$w]=1        
+	  ;;
+            *)
+          echo "error"
+          ;;
+
+esac
+done
+echo "Converted. The first severity should be ${sev[0]}"
+
+
+
+################################################# Storing the OID of the traps of a MIB ########################################
+
+echo "Storing OID from temp into variable OID"
+echo "Does it only have one trap, therefore only one OID?"
+q=0
+while read f1 f2 f3 f4
+do 
+
+oid[$q]=$f3
+q=$q+1
+
+done < temp
+
+# Comparing i with 1 to see how many OIDs are present
+if [ "$i" -eq 1 ] 
+then 
+# It has only one MIB i.e., only one trap 
+echo "It does"
+oid=${oid[0]}
+oid=${oid%.0.*}
+oid=${oid%.0} # Remove zero and everything after it
+else
+# It has more than one OIDs
+echo "Nope it has more"
+oid=$(printf "%s\n" "${oid[0]}" "${oid[1]}" | sed -r 'N;s/^(.*)(\..*)?\n\1.*$/\1/') #Compare OID arrays of index 0 and 1 and copy only similar part
+oid=${oid%.0.*}
+oid=${oid%.0} # Remove zero and everything after it
+fi
+
+echo "Stored. OID of this MIB is $oid"
+
+
+########################## Creating the header line of a LKP file under the name of OID variable ##########################################
+
+echo "Creating the LKP file"
+echo "Fixed part of the LKP being made under the name of $oid"
+# Different MIB traps can have the same OID, hence they form the same LKP file under this OID name.
+find $oid # Check and see if the file already exit, if it does don't create 
+if [ "$?" -ne 0 ] 
+then
+echo "FORM: lookupfile
+Version: 1
+LookupFile:$i" > $oid
+echo "Done. Fixed part created"
+# Their is no file under the name of OID
+
+else 
+awk -v b=$i -F: '/LookupFile/ {print $1":"$2+b; next} {print}' $oid > om
+rm $oid
+mv om $oid
+echo "Fixed OID part exits"
+# There exits a file under the name of OID, all further traps blocks will be appended to this OID named file itself
+fi
+
+
+######################################### REMOVE EVERYTHING TILL THE FIRST $cnt IN TRON ##############################################
+
+# In a MIB file a Trap is defined by writting trap-name TRAP-TYPE or trap-name NOTIFICATION-TYPE
+# A MIB file has a TRAP-TYPE or NOTIFICATION-TYPE written before it actually defines a Trap, hence this has to be removed
+echo "Removing everything from the starting of the file till the first $cnt is encountered"
+w=0
+
+awk '/'"$cnt"'/{i++}i' $fname >tron # Find the first TRAP-TYPE or NOTIFICATION-TYPE and remove everything before it  
+echo "Checking if this the $cnt that defines a Trap"
+# Now find the first TRAP-TYPE or NOTIFICATION-TYPE and copy whatever comes after it within the line
+# If there is nothing after it then the TRAP-TYPE or NOTIFICATION-TYPE name itself is stored in input else some other word whatever comes after it is stored
+input=$(awk '/'"$cnt"'/ {print $2; exit}' tron)
+
+echo $input
+echo "is this the variable we are looking for?"
+# Conditon as long as we dont find a the TRAP-TYPE or NOTIFICATION-TYPE we keep doing this:
+while [[ "$input" != "$cnt" ]] # check if input not equal to (TRAP-TYPE or NOTIFICATION-TYPE)
+do 
+# It is not equal
+echo "Nope it isn't!" 
+chmod 777 tron
+# delete the first line of tron so that the first line of TRAP-TYPE or NOTIFICATION-TYPE is gone
+sed -i '1d' tron
+# Now find the next TRAP-TYPE or NOTIFICATION-TYPE and remove everything before it
+awk '/'"$cnt"'/{i++}i' tron >tron1
+
+chmod 777 tron1
+rm tron
+mv tron1 tron
+# calculate input again
+input=$(awk '/'"$cnt"'/ {print $2; exit}' tron)
+#echo "Editing file removing this $cnt and finding the next one. Checking is this is the $cnt that defines a Trap"
+done
+#echo "Yes this is the $cnt we are looking for" 
+
+##################################################################################################################
+###################################################### LOOP 2 ####################################################
+##################################################################################################################
+#storing each block into a array
+while [[ $w -lt $i ]]
+do
+#echo "storing each $cnt block in a array called woah[x]"
+# Copy everything in between of $eoro and case number ::=
+woah[$w]=$(awk '$1=="::=" {f=0;print;exit;} f{print;next} $1=="'"$eoro"'" {f=1;print;}' tron | tr -s " ")
+# remove first line
+sed -i '1d' tron
+# delete everything till the next TRAP-TYPE or NOTIFICATION-TYPE 
+awk '/'"$cnt"'/{i++}i' tron >tron1
+
+chmod 777 tron1
+rm tron
+mv tron1 tron
+w=$w+1
+done
+#echo "Stored. The first block should be ${woah[0]}"
+
+###### FIND VALUES OF ALL BLOCKS ################
+l=0
+#Extracting description, casenumber, number of varaiables,and variables.
+#echo "Extracting description and case number from each block" 
+# loop to read all variable 
+for (( b=0; b<i; b++ ))
+do 
+# CREATED A TEMP FILE 
+echo "${woah[$b]}" >temp1
+
+chmod 777 temp1
+#################################################### Grab description from woah block ##############################################
+# Grab everything between the first and the second occurance of " and put it in a temp file
+awk -v RS='"' -v ORS='"' 'NR==1{print} NR==2{print; printf"\n";exit}' temp1 >temp3
+
+# Remove everything before description
+pls=$(awk '/DESCRIPTION/{i++}i' temp3)
+# Remove all extra space between the the description lines
+
+shopt -s extglob
+pls=${pls//+([[:space:]])/ }
+# now subrtact DESCRIPTION from the code and remove all extra right and left whitespaces
+desc=$(echo "$pls" | awk '/DESCRIPTION/,/"/ {gsub("DESCRIPTION"," ");print}'| sed 's/^[ \t]*//'| sed 's/[ \t]*$//'| sed -e 's/"//g')
+
+
+#desc=$(< temp1 awk '/DESCRIPTION/ {getline; sub(/^\s*"/, ""); sub(/"\s*$/, ""); print}'| sed 's/^[ \t]*//'| sed 's/[ \t]*$//'| sed -e 's/^"//')
+#echo $desc
+
+#casenum=$(sed 's/[ \t]*$//' temp1 | sed 's/^[ \t]*//' | awk '/::=/ {sub(/^\s*::=\s*/, ""); sub(/\s*$/, ""); print}' | sed 's/^[ \t]*//')
+
+# find case number grab line starting with ::= and remove quotes remove all alphabets and capture only number between the { } brackets
+casenum=$(sed 's/[ \t]*$//' temp1 | sed 's/^[ \t]*//' | awk '/::=/ {sub(/^\s*::=\s*/, ""); sub(/\s*$/, "");gsub("}"," ");gsub("{"," ");gsub("[a-zA-Z]"," ");print}' | sed 's/^[ \t]*//'| sed 's/[ \t]*$//')
+
+#check if the block has a variable  or an object in the block 
+#echo "Checking if this woah[x] block has a variable"
+grep -q 'VARIABLES\|OBJECTS' temp1
+if [ "$?" -eq 0 ] 
+then
+#Count the total number of words between the VARIABLE or OBJECTS and } 
+numvar="$(awk '/'"$vovar"'/,/}/ {gsub("'"$vovar"'"," "); gsub("}"," "); gsub("{"," ");gsub(","," ");print}' temp1 | wc -w)"
+#echo "$numvar"
+#numvar="$(awk '/VARIABLES/,/DESCRIPTION/ {gsub("VARIABLES"," "); gsub("DESCRIPTION"," "); gsub("}"," "); gsub("{"," ");gsub(","," ");print}' temp1 | wc -w)"
+
+# reduce numvar by one and store in bleak, as explained in next comment
+bleak=$(($numvar-1))
+# Calulate bleak, create sTrapValue[x] and store in bl. Where x is the number of variables of a trap-1 as the command starts from zero
+bl="$(seq 0 "$bleak" | while read i; do echo "sTrapValue[$i]"; done | tr '\n' ',' | sed 's/,$//')"
+
+#check if the description has a %s or a %d, if it does then bun=1 and if not bun=0
+echo $desc | grep "%s\|%d" -q && bun=1 || bun=0
+if [ "$bun" -eq 1 ] 
+then
+# It has %s or %d in description
+pvar=""
+comma=""
+#echo "has %d or %s in description"
+else
+# Copy the words between the VARIABLE or OBJECTS and } , add : %s end the end of each line and store in variable prvar 
+prvar="$(awk '/'"$vovar"'/,/}/ {gsub("'"$vovar"'"," "); gsub("}",": %s,"); gsub("{"," ");gsub(",",": %s,");print}' temp1)"
+
+#prvar="$(awk '/VARIABLES/,/DESCRIPTION/ {gsub("VARIABLES"," "); gsub("DESCRIPTION"," "); gsub("}"," "); gsub("{"," ");gsub(","," ");print;print ":%s,"}' temp1)"
+
+# now remove all extra right and left whitespaces
+shopt -s extglob
+prvar=${prvar//+([[:space:]])/ }
+prvar="$(echo "$prvar" | sed 's/^[ \t]*//'| sed 's/[ \t]*$//')"
+prvar="$(echo "${prvar:: -5}")"
+# delete the last (: %s,) extra characteristics
+comma=","
+#echo "doesn't have %d or %s in description"
+fi
+
+##################################################################################################################
+###################################################### LOOP 3 ####################################################
+##################################################################################################################
+
+# Take arrayvar and store all the variables of the particular trap in it 
+IFS=" "
+arrayvar=( $(awk '/'"$vovar"'/,/}/ {gsub("'"$vovar"'"," "); gsub("}"," "); gsub("{"," ");gsub(","," ");print}' temp1 | tr -d '\n' | sed 's/^[ \t]*//' | sed 's/[ \t]*$//') )
+
+#echo "${arrayvar[0]}"
+#echo "${arrayvar[1]}"
+#echo "${arrayvar[2]}"
+IFS=","
+
+# looping to find the first variable name that defined by OBJECT-TYPE
+w=0
+encom=0
+while [[ $w -lt $numvar ]]
+do 
+#removing all whitespaces 
+arrayvar[$w]=$(echo "${arrayvar[$w]}" | tr -d '\n' | sed 's/^[ \t]*//' | sed 's/[ \t]*$//')
+
+#finding the first variable name and removing everything above it
+awk '/'"${arrayvar[$w]}"'/{i++}i' $fname >tron1  #just to create another file dont want to edit on $fname#
+
+#Finding what is written after the variable  name
+input=$(awk '/'"${arrayvar[$w]}"'/ {print $2; exit}' tron1)
+#echo $input
+while [[ "$input" != "OBJECT-TYPE" ]] 
+do 
+#echo "Nope it doesn't!" 
+chmod 777 tron1
+
+# delete the first line
+sed -i '1d' tron1
+#finding the next variable name occurance and removing everything above it
+awk '/'"${arrayvar[$w]}"'/{i++}i' tron1 >tron2
+
+chmod 777 tron2
+rm tron1
+mv tron2 tron1
+# calculating what is written after the next variable
+input=$(awk '/'"${arrayvar[$w]}"'/ {print $2; exit}' tron1)
+#echo $input
+#echo "Editing file removing this arrayvar and finding the next one. Checking is this is the $cnt that defines a Trap"
+done
+#echo "out of loop"
+#remove everything from the description line to the end
+sed -i '/DESCRIPTION/,$d' tron1
+
+#################################################### Finding if the variables have a mapping ##########################################
+#grep INTEGER -q tron1
+# find if this particular varaible has mappings
+pcregrep -M -q "INTEGER.*\n.*{|INTEGER.*{" tron1 #############INSTALL PCREGREP##################
+if [ "$?" -eq 0 ] 
+then
+# Grab everything between INTEGER and } 
+awk '/INTEGER/,/}/ {gsub("INTEGER"," "); gsub("}"," "); gsub("{"," ");gsub(","," ");print}' tron1 >tempo
+sed '1d' tempo >tron1
+# Delete the first line to remove INTEGER
+sed -i '/^\s*$/d' tron1
+# Remove all extra line spaces from the file
+# Create a array called war and store all the numbers corresponding to the mappings into it
+mapfile war < <(< tron1 awk -vRS=")" -vFS="(" '{print $2}' | sed 's/^[ \t]*//g'| sed 's/[ \t]*$//g')
+# Create a array called rinzler and store all the names of the mappings into it
+mapfile -t rinzler < <(grep -Po '^\s+\K[^ ]+' tron1 | sed 's/^[ \t]*//g'| sed 's/[ \t]*$//g' | sed 's/([^)]*)//g' | tr -d ',')
+#mapfile -t rinzler < <(grep -Po '^\s+\K[^ ]+(?= ?\(\d+\),?$)' tron1)
+
+# calculate total number of mappings
+prnum=$(echo "${#rinzler[@]}")
+# create a shorter name for the outfile with a string s in the begining of it 
+outf=${arrayvar[$w]}
+#store the the name of the mapping file into a array called outfile[encom]
+outfile[$encom]="$(echo "${outf:4}"| sed -e 's/^/s/')"
+
+################################################## Part to create the outfile ##########################################################
+find ${outfile[$encom]} #### Helps save time, don't need to create a same outfile again ####
+if [ "$?" -ne 0 ]
+then
+# create the fixed part of the oufile 
+echo "FORM: LookupFile
+Version: 1
+LookupFileCount: $prnum" > ${outfile[$encom]}
+
+#Add a loop to read the whole outfile[] array and print multiple files create outfile
+fly=0
+##################################################################################################################
+###################################################### LOOP 3 ####################################################
+##################################################################################################################
+for (( van=0; van<prnum; van++ ))
+do
+# removing extra random spaces
+rinzler="$(echo "${rinzler[$fly]}" | sed 's/^[ \t]*//g'| sed 's/[ \t]*$//g')"
+war="$(echo "${war[$van]}" | tr -d '\n')"
+#Printing the mapping part of outfile
+echo "
+Case: "\"$war\""
+{
+clear (${outfile[$encom]})
+copy(${outfile[$encom]} : "\"$rinzler\"")
+}" >> ${outfile[$encom]}
+fly=$(($fly+1))
+
+done
+fi
+
+
+fi
+
+encom=$encom+1
+
+w=$w+1
+done
+
+################################################ Creating the LKP file which may or maynot have a mapping #############################
+fndoutfile=$(echo "${#outfile[@]}")
+#echo "$fndoutfile"
+if [ "$fndoutfile" -eq 0 ] 
+then
+# This is created if none of the variables need mapping
+echo " 
+Case: "\"$casenum\""
+{
+set(iSeverity=${sev[$l]})
+lookup(sTrapResource, \"MPS_Node2Res\", iMatchMPS)
+printf(sResource,\"%s:${tna[$l]}\",sTrapResource)
+printf(sMessage,\"IP:%s,NodeName:%s,$desc$comma$prvar\",sIPadd, sNodeName,""$bl"")
+}" >> $oid
+
+else
+#creating a part of the LKP file for the trap with the mappings
+echo " 
+Case: "\"$casenum\""
+{
+set(iSeverity=${sev[$l]})" >> $oid
+
+# Applying loop to add as many line as the total number of the varaibles that had a mapping
+for (( me=0; me<numvar; me++ ))
+do 
+#echo "goes into loop?"
+#Check if the outfile array has something in it
+[ ${outfile[$me]+abc} ]
+if [ "$?" -eq 0 ] 
+then
+#Adding linking lines of the LKP file if a variable has a mapping
+echo "lookup(sTrapValue[$me],"\"${outfile[$me]}\"",iMatchStatus)" >> $oid
+bl="$(echo "$bl" | sed "s/sTrapValue\[$me\]/${outfile[$me]}/")"
+# replacing the sTrapValue with outfile name if the varaible
+fi
+done
+#the rest part of the LKP file of the trap
+echo "lookup(sTrapResource, \"MPS_Node2Res\", iMatchMPS)
+printf(sResource,\"%s:${tna[$l]}\",sTrapResource)
+printf(sMessage,\"IP:%s,NodeName:%s,$desc$comma$prvar\",sIPadd, sNodeName,""$bl"")
+}" >> $oid
+
+
+
+fi
+
+else 
+#echo "It doesnt. LKP file being created..."
+#creating the part of the LKP file for the Trap without a variable
+echo "
+Case: "\"$casenum\""
+{
+set(iSeverity=${sev[$l]})
+lookup(sTrapResource, \"MPS_Node2Res\", iMatchMPS) 
+printf(sResource,\"%s:${tna[$l]}\",sTrapResource) 
+printf(sMessage,\"IP:%s,NodeName:%s, $desc\",sIPadd, sNodeName)
+}" >> $oid
+
+fi
+# Reset outfile, if this is not done the outfile value maybe carried to the next trap
+unset outfile
+
+l=$(($l+1))
+
+done
+
+echo "Done. LKP file under the name $oid created!"
+# Replacing all %ds with %s 
+sed -i 's/%d/%s/g' $oid
+#deleting all extra files
+rm temp
+rm temp1 
+rm tron
+rm tron1
+rm temp3 
+rm tempo
+fi
+
+# remove the current MIB file name from the mibwithtraps
+sed -i "/$fname/d" mibwithtraps
+#loop continues and next MIB can be loaded
+mkdir /home/erawson/bin/endofline/processedmib
+mv $fname /home/erawson/bin/endofline/processedmib
+
+done
