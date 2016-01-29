@@ -1,4 +1,4 @@
-# MIBtoLKPfileconverter
+# MIB to LKP file converter
 
 Abbreviations Used               
 SNMP : Simple Network Management Protocol             
